@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import "./styles.css";
 import { fetchStatistics } from "./api.js";
+import { AuthGate } from "./Auth.jsx";
 
 const colors = ["#6c5ce7", "#9b8ff3", "#c0b8fa", "#ddd9fc"];
 const money = (value) =>
@@ -69,7 +70,7 @@ function Panel({ id, title, subtitle, children, className = "" }) {
     </section>
   );
 }
-function App() {
+function Dashboard({ user, onSignedOut }) {
   const [months, setMonths] = useState("12");
   const [department, setDepartment] = useState("all");
   const [data, setData] = useState(null);
@@ -87,7 +88,10 @@ function App() {
     )
       .then(setData)
       .catch((err) => {
-        if (!controller.signal.aborted) setError(err.message);
+        if (!controller.signal.aborted) {
+          if (err.status === 401) onSignedOut();
+          else setError(err.message);
+        }
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
@@ -151,12 +155,7 @@ function App() {
             </a>
           ))}
         </nav>
-        <div className="company">
-          <span className="avatar">M</span>
-          <div>
-            Meridian Ltd<span>Company workspace</span>
-          </div>
-        </div>
+        <div className="account-actions"><div className="company"><span className="avatar">{user.name.slice(0, 1).toUpperCase()}</span><div>{user.name}<span>Company workspace</span></div></div><Logout onSignedOut={onSignedOut}/></div>
       </header>
       <main id="overview">
         <div className="page-heading">
@@ -492,6 +491,19 @@ function App() {
       </main>
     </>
   );
+}
+function Logout({ onSignedOut }) {
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
+  return <div className="logout-control"><button className="button" disabled={pending} onClick={async () => {
+    setPending(true); setError("");
+    try { await fetchStatistics("/api/auth/logout", { method: "POST", body: {} }); onSignedOut(); }
+    catch (err) { setError(err.message); }
+    finally { setPending(false); }
+  }}>{pending ? "Logging out…" : "Log out"}</button>{error && <span role="alert">{error}</span>}</div>;
+}
+function App() {
+  return <AuthGate>{(user, onSignedOut) => <Dashboard user={user} onSignedOut={onSignedOut}/>}</AuthGate>;
 }
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
