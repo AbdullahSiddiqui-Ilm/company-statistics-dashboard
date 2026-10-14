@@ -9,7 +9,13 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5173,
       strictPort: true,
-      proxy: { "/api": `http://127.0.0.1:${apiPort}` },
+      proxy: {
+        "/api": {
+          target: `http://127.0.0.1:${apiPort}`,
+          // Preserve the browser-facing Host so the API can validate Origin.
+          changeOrigin: false,
+        },
+      },
     },
     build: { outDir: "../dist", emptyOutDir: true },
   };
