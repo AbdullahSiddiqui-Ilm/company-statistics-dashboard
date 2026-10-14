@@ -45,7 +45,7 @@ export function authHandlers(store, { secure = false } = {}) {
   const wrap = handler => async (req, res) => {
     res.set('Cache-Control', 'no-store');
     try { await handler(req, res); }
-    catch (error) { if (!error.status) console.error('Authentication storage failed:', error.code || error.message); res.status(error.status || 503).json({ error: error.status ? error.message : 'Account service is unavailable. Check the database and try again.' }); }
+    catch (error) { if (!error.status) console.error('Authentication storage failed:', error.code || 'storage error'); res.status(error.status || 503).json({ error: error.status ? error.message : 'Account service is unavailable. Check the database and try again.' }); }
   };
   return {
     signup: wrap(async (req, res) => {
