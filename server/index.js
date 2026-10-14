@@ -4,17 +4,20 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
 import { createApp } from "./app.js";
+import { postgresAuthStore } from "./auth-store.js";
 
 const pool = process.env.DATABASE_URL
   ? new pg.Pool({
       connectionString: process.env.DATABASE_URL,
       connectionTimeoutMillis: 5000,
+      statement_timeout: 8000,
     })
   : null;
 const app = createApp(
   pool
     ? {
         source: "postgresql",
+        authStore: postgresAuthStore(pool),
         loadRows: async () =>
           (
             await pool.query(
